@@ -2,7 +2,8 @@
 
 from predictor import Predictor
 from rank_metrics import mean_reciprocal_rank, mean_average_precision
-import math
+import numpy as np
+from const import SIGMOID_RANGE
 
 def approx_ap(x_list, y_list, weight, eta, alpha, beta):
     """ Calculate gradient for ApproxAP and update weight.
@@ -35,7 +36,23 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
         Returns:
             logistic(float): value of logistic function by given s_xy and alpha
         """
-        return math.exp(-alpha * s_xy) / (1.0 + math.exp(-alpha * s_xy))
+        x = -alpha * s_xy
+        if x <= -SIGMOID_RANGE:
+            return 1e-15
+        elif x >= SIGMOID_RANGE:
+            return 1.0 - 1e-15
+
+        return np.exp(-alpha * s_xy) / (1.0 + np.exp(-alpha * s_xy))
+
+    def diff_logistic(s_xy, alpha):
+        """ differential of logistic function
+        Params:
+            s_xy(float): difference between x-th and y-th item
+            alpha(int): scaling constant for approximated position function
+        Returns:
+            diff_logistic(float): value of differential of logistic function
+        """
+        return (1.0 - logistic(s_xy, alpha)) * logistic(s_xy, alpha)
 
     def pihat(x, s, alpha):
         """ approximated position function
@@ -58,17 +75,7 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
         Returns:
             gradient_of_pihat(float): gradient of approximated position function
         """
-
-        def diff_logistic(s_xy, alpha):
-            """ differential of logistic function
-            Params:
-                s_xy(float): difference between x-th and y-th item
-                alpha(int): scaling constant for approximated position function
-            Returns:
-                diff_logistic(float): value of differential of logistic function
-            """
-            return math.exp(alpha * s_xy) / ((1.0 + math.exp(alpha * s_xy)) ** 2)
-
+ 
         return -alpha * sum([diff_logistic(s_xy(s[x], s[y]), alpha) * (x_list[x] - x_list[y]) for y in range(N) if y!=x])
 
     def gradient_of_J(x, y, s, alpha, beta, N, x_list):
@@ -85,12 +92,10 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
             gradient_of_J(float): value of gradient of J by given args.
         """
         dJ_dpihat_x = lambda x, y, s, alpha, beta: \
-                -1.0 / pihat(y, s, alpha) * beta * math.exp(beta * ((pihat(x, s, alpha) - pihat(y, s, alpha)))) / \
-                ((1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) ** 2)
+                -1.0 / pihat(y, s, alpha) * beta * diff_logistic(pihat(x, s, alpha) - pihat(y, s, alpha), beta)
         dJ_dpihat_y = lambda x, y, s, alpha, beta: \
-                -1.0 / (pihat(y, s, alpha) ** 2) * 1.0 / (1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) + \
-                1.0 / pihat(y, s, alpha) * beta * math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha))) / \
-                ((1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) ** 2)
+                -1.0 / (pihat(y, s, alpha) ** 2) * logistic(pihat(x, s, alpha) - pihat(y, s, alpha), beta) + \
+                1.0 / pihat(y, s, alpha) * beta * diff_logistic(pihat(x, s, alpha) - pihat(y, s, alpha), beta)
 
         return dJ_dpihat_y(x, y, s, alpha, beta) * gradient_of_pihat(y, s, N, x_list) + \
                 dJ_dpihat_x(x, y, s, alpha, beta) * gradient_of_pihat(x, s, N, x_list)
