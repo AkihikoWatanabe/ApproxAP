@@ -85,8 +85,8 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
             gradient_of_J(float): value of gradient of J by given args.
         """
         dJ_dpihat_x = lambda x, y, s, alpha, beta: \
-                -1.0 / pihat(y, s, alpha) * beta * math.exp(beta * ((pihat(x, s, alpha) - pihat(y, s, alpha))) / \
-                (1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) ** 2)
+                -1.0 / pihat(y, s, alpha) * beta * math.exp(beta * ((pihat(x, s, alpha) - pihat(y, s, alpha)))) / \
+                ((1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) ** 2)
         dJ_dpihat_y = lambda x, y, s, alpha, beta: \
                 -1.0 / (pihat(y, s, alpha) ** 2) * 1.0 / (1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) + \
                 1.0 / pihat(y, s, alpha) * beta * math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha))) / \
