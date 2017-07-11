@@ -5,6 +5,13 @@ For details about ApproxAP, see the following papers:
 A General Approximation Framework for Direct Optimization of Information Retrieval Measures, Qin+, Information Retrieval, 2010.
 ```
 
+# Requirements
+* python 2.7
+* tqdm
+* numpy
+* scipy
+* joblib
+
 # Example
 ## Training
 ```python
