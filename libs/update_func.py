@@ -46,15 +46,15 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
         Returns:
             pihat(float): value of approximated position function
         """
-        return 1.0 + [logistic(s_xy(s[x], s[y]), alpha) for y in range(N) if x!=y]
+        return 1.0 + sum([logistic(s_xy(s[x], s[y]), alpha) for y in range(N) if x!=y])
 
-    def gradient_of_pihat(x, s, N, features):
+    def gradient_of_pihat(x, s, N, x_list):
         """ gradient of approximated position function. See appendix B.1 equation (42).
         Params:
             x(int): item index
             s(list): list of score of items
             N(int): # of items
-            features(csr_matrix): csr_matrix of features
+            x_list(csr_matrix): csr_matrix of features
         Returns:
             gradient_of_pihat(float): gradient of approximated position function
         """
@@ -69,9 +69,9 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
             """
             return math.exp(alpha * s_xy) / ((1.0 + math.exp(alpha * s_xy)) ** 2)
 
-        return -alpha * [diff_logistic(s_xy(s[x], s[y]), alpha) * (features[x] - features[y]) for y in range(N) if y!=x]
+        return -alpha * sum([diff_logistic(s_xy(s[x], s[y]), alpha) * (x_list[x] - x_list[y]) for y in range(N) if y!=x])
 
-    def gradient_of_J(x, y, s, alpha, beta, N, features):
+    def gradient_of_J(x, y, s, alpha, beta, N, x_list):
         """ gradient of J. See appendix B.2 equation (45).
         Params:
             x(int): item index
@@ -80,7 +80,7 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
             alpha(int): scaling constant for approximated position function
             beta(int): scaling constant for approximated truncation function
             N(int): # of items
-            features(csr_matrix): csr_matrix of features
+            x_list(csr_matrix): csr_matrix of features
         Returns:
             gradient_of_J(float): value of gradient of J by given args.
         """
@@ -92,18 +92,18 @@ def approx_ap(x_list, y_list, weight, eta, alpha, beta):
                 1.0 / pihat(y, s, alpha) * beta * math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha))) / \
                 ((1.0 + math.exp(beta * (pihat(x, s, alpha) - pihat(y, s, alpha)))) ** 2)
 
-        return dJ_dpihat_y(x, y, s, alpha, beta) * gradient_of_pihat(y, s, N, features) + \
-                dJ_dpihat_x(x, y, s, alpha, beta) * gradient_of_pihat(x, s, N, features)
+        return dJ_dpihat_y(x, y, s, alpha, beta) * gradient_of_pihat(y, s, N, x_list) + \
+                dJ_dpihat_x(x, y, s, alpha, beta) * gradient_of_pihat(x, s, N, x_list)
 
     predictor = Predictor()
 
-    N = len(x_list) # # of items
+    N = x_list.shape[0] # # of items
     r_i = lambda i:y_list[i] # relevance score for i-th item
     s = predictor.predict(x_list, weight) # score of items
     D = sum([1.0 if relevance==1 else 0 for relevance in y_list])
     
-    gradient = -1.0 / D * [r_i(y) / (pihat(y, s, alpha) ** 2) * gradient_of_pihat(y, s, N, features) for y in range(N)] + \
-            1.0 / D * [r_i(y) * r_i(x) * gradient_of_J(x, y, s, alpha, beta, N, features) for y in range(N) for x in range(N) if x!=y]
+    gradient = -1.0 / D * sum([r_i(y) / (pihat(y, s, alpha) ** 2) * gradient_of_pihat(y, s, N, x_list) for y in range(N)]) + \
+            1.0 / D * sum([r_i(y) * r_i(x) * gradient_of_J(x, y, s, alpha, beta, N, x_list) for y in range(N) for x in range(N) if x!=y])
     weight += eta * gradient
 
     return weight

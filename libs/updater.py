@@ -7,6 +7,7 @@ A python implementation of ApproxAP.
 import numpy as np
 import scipy.sparse as sp
 from joblib import Parallel, delayed
+from tqdm import tqdm
 
 from update_func import approx_ap
 
@@ -51,8 +52,8 @@ class Updater():
         """
         assert len(x_dict) == len(y_dict), "invalid # of qids"
         
-        qids = self.get_shuffled_qids(x_dict, y_dict, weight.epoch)
-        for q in qids:
-            weight = approx_ap(x_dict[qid], y_dict[qid], weight.get_weight(), self.eta, self.alpha, self.beta)
-            weight.set_weight(weight)
+        qids = self.__get_shuffled_qids(x_dict, y_dict, weight.epoch)
+        for qid in tqdm(qids):
+            w = approx_ap(x_dict[qid], y_dict[qid], weight.get_weight(), self.eta, self.alpha, self.beta)
+            weight.set_weight(w)
         weight.epoch += 1
