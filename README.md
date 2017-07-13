@@ -10,7 +10,6 @@ A General Approximation Framework for Direct Optimization of Information Retriev
 * tqdm
 * numpy
 * scipy
-* joblib
 
 # Example
 ## Training
