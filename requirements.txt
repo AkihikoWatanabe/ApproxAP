@@ -1,4 +1,5 @@
 tqdm
 joblib
+Cython
 scipy
 numpy

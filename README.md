@@ -7,6 +7,7 @@ A General Approximation Framework for Direct Optimization of Information Retriev
 
 # Requirements
 * python 2.7
+* Cython
 * tqdm
 * numpy
 * scipy
