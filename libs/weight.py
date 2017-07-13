@@ -29,6 +29,11 @@ class Weight():
 
         return self.w
 
+    def get_dense_weight(self):
+
+        # [0] means that we get 1-D np.ndarray of weight
+        return self.w.toarray()[0]
+
     def dump_weight(self, path):
         """ Dump weight vector
         Params:

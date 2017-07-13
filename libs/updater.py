@@ -9,7 +9,7 @@ import scipy.sparse as sp
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-from update_func import approx_ap
+from update_func_approxap import approx_ap
 
 class Updater():
     """ This class support ApproxAP updater.
@@ -53,7 +53,9 @@ class Updater():
         assert len(x_dict) == len(y_dict), "invalid # of qids"
         
         qids = self.__get_shuffled_qids(x_dict, y_dict, weight.epoch)
+        w = weight.get_dense_weight()
         for qid in tqdm(qids):
-            w = approx_ap(x_dict[qid], y_dict[qid], weight.get_weight(), self.eta, self.alpha, self.beta)
-            weight.set_weight(w)
+            w = approx_ap(x_dict[qid].toarray(), y_dict[qid], w, self.eta, self.alpha, self.beta)
+            exit()
+        weight.set_weight(sp.csr_matrix(w))
         weight.epoch += 1
