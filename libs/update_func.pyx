@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from const import SIGMOID_RANGE, DIM
+from const import SIGMOID_RANGE
 import numpy as np
 cimport numpy as np
 
@@ -10,8 +10,45 @@ ctypedef np.int8_t DTYPE_INT8_t
 ctypedef np.float32_t DTYPE_FLOAT32_t
 
 cimport cython
+from cython.parallel import parallel, prange
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.nonecheck(False)
+cdef logistic(float s_xy, int alpha):
+    """ logistic function
+    Params:
+        s_xy(float): difference of score between x-th and y-th item
+        alpha(float): scaling constant
+    Returns:
+        logistic(float): value of logistic function by given s_xy and alpha
+    """
+    cdef float x = -alpha * s_xy
+
+    if x <= -SIGMOID_RANGE:
+        return 1e-15
+    elif x >= SIGMOID_RANGE:
+        return 1.0 - 1e-15
+
+    return np.exp(x) / (1.0 + np.exp(x))
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef diff_logistic(float s_xy, int alpha):
+    """ differential of logistic function
+    Params:
+        s_xy(float): difference between x-th and y-th item
+        alpha(int): scaling constant for approximated position function
+    Returns:
+        diff_logistic(float): value of differential of logistic function
+    """
+
+    return (1.0 - logistic(s_xy, alpha)) * logistic(s_xy, alpha)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
 def approx_ap( \
         np.ndarray[DTYPE_INT8_t, ndim=2, mode="c"] x_list, \
         np.ndarray[DTYPE_INT8_t, ndim=1, mode="c"] y_list, \
@@ -30,38 +67,6 @@ def approx_ap( \
     Returns:
         weight(float): updated weight
     """ 
-
-    def logistic(float s_xy, int alpha):
-        """ logistic function
-        Params:
-            s_xy(float): difference of score between x-th and y-th item
-            alpha(float): scaling constant
-        Returns:
-            logistic(float): value of logistic function by given s_xy and alpha
-        """
-        cdef float x = -alpha * s_xy
-    
-        if x <= -SIGMOID_RANGE:
-            return 1e-15
-        elif x >= SIGMOID_RANGE:
-            return 1.0 - 1e-15
-    
-        cdef float _logistic = np.exp(x) / (1.0 + np.exp(x))
-    
-        return _logistic
-    
-    def diff_logistic(float s_xy, int alpha):
-        """ differential of logistic function
-        Params:
-            s_xy(float): difference between x-th and y-th item
-            alpha(int): scaling constant for approximated position function
-        Returns:
-            diff_logistic(float): value of differential of logistic function
-        """
-        cdef float _diff_logistic = (1.0 - logistic(s_xy, alpha)) * logistic(s_xy, alpha)
-    
-        return _diff_logistic
-    
     cdef int N = x_list.shape[0] # # of cases
     cdef int F_LEN = weight.shape[0] # # of feature dim
     cdef int D = 0 # # of relevance items
@@ -117,7 +122,7 @@ def approx_ap( \
         _sum += 1.0
     
         pihat_arr[x] = _sum
- 
+
     for x in xrange(N):
         for y in xrange(x, N):
             if x == y:

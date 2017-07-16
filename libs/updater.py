@@ -56,5 +56,5 @@ class Updater():
         w = weight.get_dense_weight()
         for qid in tqdm(qids):
             w = approx_ap(x_dict[qid].toarray(), y_dict[qid], w, self.eta, self.alpha, self.beta)
-        weight.set_weight(sp.csr_matrix(w))
+        weight.set_weight(sp.csr_matrix(w.reshape((1, weight.dims))))
         weight.epoch += 1

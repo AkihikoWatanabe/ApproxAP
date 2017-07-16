@@ -16,8 +16,8 @@ class Predictor():
             y_list(list): List of result labels (or confidence score) on the prediction
         """
         #w = weight.get_weight()
-        #return [w.multiply(x_list[j]).sum() for j in xrange(x_list.shape[0])]
-        return [w.dot(x_list[j]) for j in xrange(x_list.shape[0])]
+        return [w.multiply(x_list[j]).sum() for j in xrange(x_list.shape[0])]
+        #return [w.dot(x_list[j]) for j in xrange(x_list.shape[0])]
 
     def predict_and_ranks(self, x_list, y_list, w):
         """ Predict and make rankings using result of prediction.
